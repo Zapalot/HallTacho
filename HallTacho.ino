@@ -1,62 +1,57 @@
-#include "Blinks.h"
+#define USE_OSC
 #include "Tacho.h"
+#include "Blinks.h"
 #include <avr/eeprom.h>
 #include <ArdParameterSettings.h>
 #include <WiFlyHQ.h>
 #include <ArdOSCForWiFlyHQ.h>
-#include "OscSetup.h"
+
+#include <easyWiFlyOscSetup.h>
 
 //because we cannot use function pointers to invoka a method we have to do it the old way...
 Tacho tachoInstance;
 RunningLights relaisControl;
-int EEMEM persistentDummyNumber=0;   // the compiler will give this a unique adress in eeprom, but reading and writing must bedone manually
-int dummyNumber;
-IntParameterSetting* dummySetting;
+int enableDebugOut=0;
+IntParameterSetting enableDebugOutSetting;
 
 char persistentDummyString[16] EEMEM = "testing ...";
 char dummyString[16];
-StringParameterSetting* dummyStringSetting;
-
-
-
-CallbackParameterSetting* dumpCallback;
+StringParameterSetting dummyStringSetting;
+CallbackParameterSetting dumpCallback;
 
 void setup(){
   Serial.begin(115200);
   //set up wifly and osc support
-  setupWiflyComplete(&Serial1);
+//  setupWiflyComplete(&Serial1);
 
+    tachoInstance.setup();
+    relaisControl.setup();
     
-  dummySetting=new IntParameterSetting(&dummyNumber,0,10,F("dummy"),&oscServer,(int)&persistentDummyNumber);
-  dummyStringSetting= new StringParameterSetting(dummyString,16,F("dString"),&oscServer,(int)persistentDummyString);
-  dumpCallback=new CallbackParameterSetting(&dumpParameterInfos,F("dump"),&oscServer);
+  enableDebugOutSetting.setup(&enableDebugOut,0,1,F("debug"),&oscServer,-1);
+  dummyStringSetting.setup(dummyString,16,F("dString"),&oscServer,(int)persistentDummyString);
+  dumpCallback.setup(&dumpParameterInfos,F("dump"),&oscServer);
   setupTacho();
   delay(1000);
-  Serial.println(dummyNumber);
   
 };
 
 void loop(){
   updateParametersFromStream(&Serial, 100);
-  oscServer.availableCheck();
+  //oscServer.availableCheck();
   tachoInstance.update();
   relaisControl.updateOuts(tachoInstance.smoothedVel);
-  /*
-  Serial.print(1000.0/(float)tachoInstance.lastPeriodTime);
-  Serial.print("\t");
-  Serial.print(tachoInstance.curVel);
-  Serial.print("\t");
-  Serial.print(tachoInstance.smoothedVel);
-  Serial.print("\t");
-  Serial.println(tachoInstance.lastPeriodTime);
-  */
+  if(enableDebugOut){
+    tachoInstance.printState();
+    relaisControl.printState();
+  }
+  
   delay(50);
   //Serial.println(dummyNumber);
 };
 
 
 void setupTacho(){
-  pinMode(2, INPUT);
+  pinMode(2, INPUT_PULLUP);
   digitalWrite(2, HIGH);
   attachInterrupt(0,sensorTurnedOn,FALLING);
 };
