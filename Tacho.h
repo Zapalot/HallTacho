@@ -27,7 +27,7 @@ public:
   long minPeriod;            ///< minimum time between two tacho ticks
   
   Tacho(){
-    minPeriod=50;
+    minPeriod=10;
     lastSensorMillis=0;
     lastPeriodTime=0;
     smoothFraction=995;
@@ -46,14 +46,32 @@ public:
     Serial.print("\t smoothed Vel: ");
     Serial.print(smoothedVel);
     Serial.print("\t last delta t: ");
-    Serial.println(lastPeriodTime);
+    Serial.print(lastPeriodTime);
+    Serial.print("\t turns: ");
+    Serial.println(accumulatedTurns);
   }
-  
+  void sendByOsc(OSCClient* client){
+    OSCMessage message;
+    message.beginMessage("tacho/curVel");
+    message.addArgInt32(curVel);
+    client->send(&message);
+    delay(10);
+    message.beginMessage("tacho/smoothVel");
+    message.addArgInt32(smoothedVel);
+    client->send(&message);
+    delay(10);    
+    message.beginMessage("tacho/dist");
+    message.addArgInt32(accumulatedTurns);
+    client->send(&message);
+
+  }
+
   void update(){
     long curMillis=millis();
+    if((curMillis-lastSensorMillis)<0){lastSensorMillis=curMillis;}
     //if the last complete period was shorter than the time since the last sensor-encounter, update interval time to catch a non-spinning
     //wheel.
-    if((curMillis-lastSensorMillis)>lastPeriodTime){
+    if((curMillis-lastSensorMillis)>lastPeriodTime||(curMillis-lastSensorMillis)<0){
       lastPeriodTime=(curMillis-lastSensorMillis);
     }
     
@@ -83,10 +101,11 @@ public:
     
     long curMillis=millis();
     //a kind of debounce
+    
     if((curMillis-lastSensorMillis)>minPeriod){
       lastPeriodTime=curMillis-lastSensorMillis;
       lastSensorMillis=curMillis;
-      accumulatedTurns+=1000;
+      accumulatedTurns+=1024;
     };
   };
   

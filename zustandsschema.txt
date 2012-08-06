@@ -1,0 +1,20 @@
+1. einzelnes licht
+	- position <-> speed
+	->> weiter bei maxspeed
+2. auffüllen
+	<<-- wenn lange zeit keine umdrehung zurück auf 1.
+	- distDecay =0
+	- position <-> dist nach dem umschalten
+	-->> vorwärts durch maxDist
+3. ausgeschaltete chaser
+	<<-- wenn Dist< startDist, zurück zu 2.
+	-	höherer DistDecay, 
+	-> anzahl <-> dist nach dem umschalten
+	-> chaseSpeed <-> speed
+	-->> weiter nach distanz bei mindestgeschwindigkeit
+4. funkeln
+	<<- zurück bei unterschreitung der mindestgeschwindigkeit
+	- funkelspeed nach speed
+	- funkelfüllung nach distanz
+	
+	profil lichtdesign kadana maschinentreiber.ch
